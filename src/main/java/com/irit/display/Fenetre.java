@@ -5,22 +5,16 @@
  */
 package com.irit.display;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
+
 import java.io.*;
 import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import com.irit.reponses.GenerateurXML;
-import com.irit.reponses.StockReponses;
+
+
 import com.irit.upnp.*;
 import org.fourthline.cling.model.meta.LocalService;
-import org.w3c.dom.Document;
 
 /**
  *
@@ -32,13 +26,9 @@ public class Fenetre extends javax.swing.JFrame {
         INIT, SOUMISE;
     }
     
-    private LocalService<VoteService> voteService;
-    private LocalService<MasterCommandService> commandeProfesseurService;
-    private LocalService<ReportService> rapportService;
-    private LocalService<SendQuestionService> questionService;
+    private LocalService<MasterCommandService> masterCommandService;
     private State state;
 
-    private StockReponses stockReponses;
 
     public void activate(JButton ... buttons) {
         for (JButton b : buttons)
@@ -50,50 +40,21 @@ public class Fenetre extends javax.swing.JFrame {
             b.setEnabled(false);
     }
     
-    public void init(LocalService<VoteService> vc,
-                     LocalService<MasterCommandService> cpc,
-                     LocalService<ReportService> rc,
-                     LocalService<SendQuestionService> qs) {
-        voteService = vc;
-        commandeProfesseurService = cpc;
-        rapportService = rc;
-        questionService = qs;
+    public void init(LocalService<MasterCommandService> cpc) {
+
+        masterCommandService = cpc;
         state = State.INIT;
         activate(soumettreButton);
         deactivate(terminerbutton);
 
-        voteService.getManager().getImplementation()
-                .getPropertyChangeSupport().addPropertyChangeListener(
-                new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        String stEvt = evt.getPropertyName().toString();
 
-                        switch(state) {
-                            case INIT:
-                                if (stEvt == "inscription") {
-                                    System.out.println("Incription d'un élève!!!");
-                                }
-                                break;
-                            case SOUMISE:
-                                if (stEvt == "commande") {
-                                    System.out.println("Commande d'un élève reçue!!!");
-                                    stockReponses.addReponse(((Integer)evt.getNewValue())-1);
-                                }
-                                break;
-                        }
-                    }
-                }
-        );
     }
     /**
      * Creates new form Fenetre
      */
-    public Fenetre(LocalService<VoteService> vc,
-                   LocalService<MasterCommandService> cpc,
-                   LocalService<ReportService> rc,
-                   LocalService<SendQuestionService> qs) {
+    public Fenetre(LocalService<MasterCommandService> cpc) {
         initComponents();
-        init(vc,cpc, rc, qs);
+        init(cpc);
     }
 
   
@@ -175,9 +136,7 @@ public class Fenetre extends javax.swing.JFrame {
 
                 String nb = JOptionPane.showInputDialog("Entrer le nombre de reponses possible:");
 
-                stockReponses = new StockReponses(Integer.valueOf(nb));
-                questionService.getManager().getImplementation().notifier(jTextPane1.getText());
-                voteService.getManager().getImplementation().setState();
+
                 state = State.SOUMISE;
                 break;
             case SOUMISE:
@@ -200,20 +159,6 @@ public class Fenetre extends javax.swing.JFrame {
                 activate(soumettreButton);
                 deactivate(terminerbutton);
                 state = State.INIT;
-                Document res = new GenerateurXML().getDocXml(stockReponses.getReponses(),
-                        stockReponses.getNbQuestions());
-
-
-                DOMSource source = new DOMSource(res);
-                StringWriter writer = new StringWriter();
-                StreamResult result = new StreamResult(writer);
-
-                TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                Transformer transformer = transformerFactory.newTransformer();
-                transformer.transform(source, result);
-
-
-                rapportService.getManager().getImplementation().transmettreRapport(writer.toString());
 
                 break;
         }
