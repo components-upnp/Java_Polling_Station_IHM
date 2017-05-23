@@ -7,6 +7,8 @@ package com.irit.display;
 
 
 import java.io.*;
+import java.util.*;
+import java.util.Timer;
 import javax.swing.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -14,7 +16,11 @@ import javax.xml.transform.TransformerException;
 
 
 import com.irit.upnp.*;
+import com.irit.xml.CommandeXml;
+import com.irit.xml.GenerateurXml;
+import com.irit.xml.QuestionXml;
 import org.fourthline.cling.model.meta.LocalService;
+import org.fourthline.cling.model.types.UDN;
 
 /**
  *
@@ -29,6 +35,9 @@ public class Fenetre extends javax.swing.JFrame {
     private LocalService<MasterCommandService> masterCommandService;
     private State state;
 
+    private UDN udn;
+    private GenerateurXml gen;
+
 
     public void activate(JButton ... buttons) {
         for (JButton b : buttons)
@@ -40,21 +49,22 @@ public class Fenetre extends javax.swing.JFrame {
             b.setEnabled(false);
     }
     
-    public void init(LocalService<MasterCommandService> cpc) {
+    public void init(LocalService<MasterCommandService> cpc, UDN u) {
 
         masterCommandService = cpc;
         state = State.INIT;
         activate(soumettreButton);
         deactivate(terminerbutton);
+        udn = u;
 
 
     }
     /**
      * Creates new form Fenetre
      */
-    public Fenetre(LocalService<MasterCommandService> cpc) {
+    public Fenetre(LocalService<MasterCommandService> cpc, UDN u) {
         initComponents();
-        init(cpc);
+        init(cpc, u);
     }
 
   
@@ -80,7 +90,13 @@ public class Fenetre extends javax.swing.JFrame {
         soumettreButton.setText("Soumettre");
         soumettreButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                soumettreButtonActionPerformed(evt);
+                try {
+                    soumettreButtonActionPerformed(evt);
+                } catch (TransformerException e) {
+                    e.printStackTrace();
+                } catch (ParserConfigurationException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -128,7 +144,7 @@ public class Fenetre extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void soumettreButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_soumettreButtonActionPerformed
+    private void soumettreButtonActionPerformed(java.awt.event.ActionEvent evt) throws TransformerException, ParserConfigurationException {//GEN-FIRST:event_soumettreButtonActionPerformed
         switch(state) {
             case INIT:
                 activate(terminerbutton);
@@ -136,6 +152,9 @@ public class Fenetre extends javax.swing.JFrame {
 
                 String nb = JOptionPane.showInputDialog("Entrer le nombre de reponses possible:");
 
+                envoyerQuestion(nb);
+                envoyerCommande("CENTRE");
+                sendAucunTime();//On doit envoyer AUCUN pour que la prochaine CENTRE soit prise en compte
 
                 state = State.SOUMISE;
                 break;
@@ -158,11 +177,56 @@ public class Fenetre extends javax.swing.JFrame {
             case SOUMISE:
                 activate(soumettreButton);
                 deactivate(terminerbutton);
+
+                envoyerCommande("CENTRE");
+                sendAucunTime();//On doit envoyer AUCUN pour que la prochaine CENTRE soit prise en compte
+
                 state = State.INIT;
 
                 break;
         }
     }//GEN-LAST:event_terminerbuttonActionPerformed
+
+    public void envoyerQuestion(String nb) throws TransformerException, ParserConfigurationException {
+        gen = new QuestionXml();
+
+        HashMap<String, String> args = new HashMap<String, String>();
+        args.put("UDN", udn.toString());
+        args.put("KEY", "1234");
+        args.put("QUESTION", jTextPane1.getText());
+        args.put("NBQUESTION", nb);
+
+        masterCommandService.getManager().getImplementation()
+                .sendQuestion(gen.getDocXml(args));
+    }
+
+    public void envoyerCommande (String commande) throws TransformerException, ParserConfigurationException {
+        gen = new CommandeXml();
+
+        HashMap<String, String> args = new HashMap<String, String>();
+        args.put("UDN", udn.toString());
+        args.put("KEY", "1234");
+        args.put("COMMANDE", commande);
+
+        masterCommandService.getManager().getImplementation()
+                .sendCommande(gen.getDocXml(args));
+    }
+
+    public void sendAucunTime() {
+        java.util.Timer t = new Timer();
+        t.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    envoyerCommande("AUCUN");
+                } catch (TransformerException e) {
+                    e.printStackTrace();
+                } catch (ParserConfigurationException e) {
+                    e.printStackTrace();
+                }
+            }
+        },1000);
+    }
 
     
 

@@ -27,18 +27,18 @@ public class MasterCommandService {
     }
 
     @UpnpStateVariable
-    private String question = "";
+    private String questionToSend = "";
 
     @UpnpStateVariable
-    private String commande = "";
+    private String commandeToSend = "";
 
     public void sendQuestion(String q) {
-        question = q;
-        getPropertyChangeSupport().firePropertyChange("Question", "", question);
+        questionToSend = q;
+        getPropertyChangeSupport().firePropertyChange("QuestionToSend", null, questionToSend);
     }
 
     public void sendCommande(String c) {
-        commande = c;
-        getPropertyChangeSupport().firePropertyChange("Commande", "", commande);
+        commandeToSend = c;
+        getPropertyChangeSupport().firePropertyChange("CommandeToSend", null, commandeToSend);
     }
 }

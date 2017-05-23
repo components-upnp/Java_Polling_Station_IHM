@@ -1,4 +1,4 @@
-package com.irit;
+package test.com.irit;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

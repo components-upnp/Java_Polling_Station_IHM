@@ -53,7 +53,7 @@ public class IHMServer implements Runnable {
                 new DefaultServiceManager(masterCommandService, MasterCommandService.class)
         );
 
-        new Fenetre(masterCommandService).setVisible(true);
+        new Fenetre(masterCommandService, identity.getUdn()).setVisible(true);
 
         return new LocalDevice(
                 identity, type, details,
