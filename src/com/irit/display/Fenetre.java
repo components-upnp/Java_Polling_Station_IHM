@@ -198,6 +198,8 @@ public class Fenetre extends javax.swing.JFrame {
 
         masterCommandService.getManager().getImplementation()
                 .sendQuestion(gen.getDocXml(args));
+        masterCommandService.getManager().getImplementation()
+                .sendCommande("");
     }
 
     public void envoyerCommande (String commande) throws TransformerException, ParserConfigurationException {
